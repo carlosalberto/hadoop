@@ -99,6 +99,10 @@ public class TraceAdminProtocolTranslatorPB implements
   }
 
   @Override
+  public void openTracingRegisterTracer() throws IOException {
+  }
+
+  @Override
   public Object getUnderlyingProxyObject() {
     return rpcProxy;
   }

@@ -17,14 +17,27 @@
  */
 package org.apache.hadoop.tracing;
 
+import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.tracing.SpanReceiverInfo.ConfigurationPair;
 import org.apache.htrace.core.HTraceConfiguration;
+
+import com.google.protobuf.ByteString;
+import io.opentracing.propagation.Format;
+import io.opentracing.propagation.TextMapExtractAdapter;
+import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.SpanContext;
+import io.opentracing.util.GlobalTracer;
 
 /**
  * This class provides utility functions for tracing.
@@ -71,5 +84,52 @@ public class TraceUtils {
         return conf.get(key);
       }
     };
+  }
+
+  public static SpanContext byteStringToSpanContext(ByteString byteString) {
+    if (byteString == null) {
+      return null;
+    }
+
+    SpanContext context = null;
+    ByteArrayInputStream stream = new ByteArrayInputStream(byteString.toByteArray());
+
+    try {
+      ObjectInputStream objStream = new ObjectInputStream(stream);
+      Map<String, String> carrier = (Map<String, String>) objStream.readObject();
+
+      context = GlobalTracer.get().extract(Format.Builtin.TEXT_MAP, new TextMapExtractAdapter(carrier));
+    } catch (Exception e) {
+      // LOG?
+    }
+
+    return context;
+  }
+
+  public static ByteString spanContextToByteString(SpanContext context) {
+    if (context == null) {
+      return null;
+    }
+
+    Map<String, String> carrier = new HashMap<String, String>();
+    GlobalTracer.get().inject(context, Format.Builtin.TEXT_MAP, new TextMapInjectAdapter(carrier));
+    if (carrier.isEmpty()) {
+      return null;
+    }
+
+    ByteString byteString = null;
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+    try {
+      ObjectOutputStream objStream = new ObjectOutputStream(stream);
+      objStream.writeObject(carrier);
+      objStream.flush();
+
+      byteString = ByteString.copyFrom(stream.toByteArray());
+    } catch (IOException e) {
+      // LOG?
+    }
+
+    return byteString;
   }
 }

@@ -24,6 +24,9 @@ import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
+import io.opentracing.contrib.tracerresolver.TracerResolver;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -147,6 +150,22 @@ public class TraceAdmin extends Configured implements Tool {
     return 0;
   }
 
+  private int openTracingRegisterTracer(List<String> args) throws IOException {
+    Tracer tracer = TracerResolver.resolveTracer();
+    if (tracer == null) {
+      System.err.println("Could not able to resolve a Tracer through TraceResolver");
+    } else {
+      try {
+        GlobalTracer.register(tracer);
+        System.out.println("Successfully resolved a Tracer instance and registered it as the global Tracer");
+      } catch (IllegalStateException e) {
+        System.err.println("Could not register resolved Tracer through GlobalTracer: " + e);
+      }
+    }
+
+    return 0;
+  }
+
   @Override
   public int run(String argv[]) throws Exception {
     LinkedList<String> args = new LinkedList<String>();
@@ -194,6 +213,8 @@ public class TraceAdmin extends Configured implements Tool {
         return addSpanReceiver(args.subList(1, args.size()));
       } else if (args.get(0).equals("-remove")) {
         return removeSpanReceiver(args.subList(1, args.size()));
+      } else if (args.get(0).equals("-ot-register-tracer")) {
+        return openTracingRegisterTracer(args.subList(1, args.size()));
       } else {
         System.err.println("Unrecognized tracing command: " + args.get(0));
         System.err.println("Use -help for help.");

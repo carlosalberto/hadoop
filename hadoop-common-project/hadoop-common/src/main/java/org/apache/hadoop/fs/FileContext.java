@@ -63,7 +63,8 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.ShutdownHookManager;
 
 import com.google.common.base.Preconditions;
-import org.apache.htrace.core.Tracer;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -228,13 +229,11 @@ public class FileContext {
   private final Configuration conf;
   private final UserGroupInformation ugi;
   final boolean resolveSymlinks;
-  private final Tracer tracer;
 
   private FileContext(final AbstractFileSystem defFs,
                       final Configuration aConf) {
     defaultFS = defFs;
     conf = aConf;
-    tracer = FsTracer.get(aConf);
     try {
       ugi = UserGroupInformation.getCurrentUser();
     } catch (IOException e) {
@@ -2843,7 +2842,10 @@ public class FileContext {
     return defaultFS.getAllStoragePolicies();
   }
 
+  /**
+   * DEPRECATED
+   */
   Tracer getTracer() {
-    return tracer;
+    return GlobalTracer.get();
   }
 }
