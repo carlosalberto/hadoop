@@ -68,13 +68,14 @@ import org.apache.hadoop.util.DataChecksum.Type;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Time;
-import org.apache.htrace.core.TraceScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
 
 /****************************************************************
  * DFSOutputStream creates files from a stream of bytes.
@@ -262,8 +263,8 @@ public class DFSOutputStream extends FSOutputSummer
       short replication, long blockSize, Progressable progress,
       DataChecksum checksum, String[] favoredNodes, String ecPolicyName)
       throws IOException {
-    try (TraceScope ignored =
-             dfsClient.newPathTraceScope("newStreamForCreate", src)) {
+    try (Scope ignored =
+             dfsClient.newPathScope("newStreamForCreate", src)) {
       HdfsFileStatus stat = null;
 
       // Retry the create if we get a RetryStartFileException up to a maximum
@@ -393,8 +394,8 @@ public class DFSOutputStream extends FSOutputSummer
       throw new IOException(
           "Not support appending to a striping layout file yet.");
     }
-    try (TraceScope ignored =
-             dfsClient.newPathTraceScope("newStreamForAppend", src)) {
+    try (Scope ignored =
+             dfsClient.newPathScope("newStreamForAppend", src)) {
       final DFSOutputStream out = new DFSOutputStream(dfsClient, src, flags,
           progress, lastBlock, stat, checksum, favoredNodes);
       out.start();
@@ -412,8 +413,8 @@ public class DFSOutputStream extends FSOutputSummer
         src, chunkSize, chunksPerPacket, packetSize);
   }
 
-  protected TraceScope createWriteTraceScope() {
-    return dfsClient.newPathTraceScope("DFSOutputStream#write", src);
+  protected Scope createWriteScope() {
+    return dfsClient.newPathScope("DFSOutputStream#write", src);
   }
 
   // @see FSOutputSummer#writeChunk()
@@ -574,14 +575,14 @@ public class DFSOutputStream extends FSOutputSummer
    */
   @Override
   public void hflush() throws IOException {
-    try (TraceScope ignored = dfsClient.newPathTraceScope("hflush", src)) {
+    try (Scope ignored = dfsClient.newPathScope("hflush", src)) {
       flushOrSync(false, EnumSet.noneOf(SyncFlag.class));
     }
   }
 
   @Override
   public void hsync() throws IOException {
-    try (TraceScope ignored = dfsClient.newPathTraceScope("hsync", src)) {
+    try (Scope ignored = dfsClient.newPathScope("hsync", src)) {
       flushOrSync(true, EnumSet.noneOf(SyncFlag.class));
     }
   }
@@ -600,7 +601,7 @@ public class DFSOutputStream extends FSOutputSummer
    *          whether or not to update the block length in NameNode.
    */
   public void hsync(EnumSet<SyncFlag> syncFlags) throws IOException {
-    try (TraceScope ignored = dfsClient.newPathTraceScope("hsync", src)) {
+    try (Scope ignored = dfsClient.newPathScope("hsync", src)) {
       flushOrSync(true, syncFlags);
     }
   }
@@ -840,7 +841,7 @@ public class DFSOutputStream extends FSOutputSummer
   public void close() throws IOException {
     final MultipleIOException.Builder b = new MultipleIOException.Builder();
     synchronized (this) {
-      try (TraceScope ignored = dfsClient.newPathTraceScope(
+      try (Scope ignored = dfsClient.newPathScope(
           "DFSOutputStream#close", src)) {
         closeImpl();
       } catch (IOException e) {
@@ -902,8 +903,8 @@ public class DFSOutputStream extends FSOutputSummer
   private void completeFile() throws IOException {
     // get last block before destroying the streamer
     ExtendedBlock lastBlock = getStreamer().getBlock();
-    try (TraceScope ignored =
-        dfsClient.getTracer().newScope("completeFile")) {
+    try (Scope ignored =
+        dfsClient.getTracer().buildSpan("completeFile").startActive(true)) {
       completeFile(lastBlock);
     }
   }

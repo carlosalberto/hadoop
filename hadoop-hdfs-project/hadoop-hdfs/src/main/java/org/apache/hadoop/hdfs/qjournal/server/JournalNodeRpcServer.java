@@ -117,7 +117,7 @@ public class JournalNodeRpcServer implements QJournalProtocol,
       CommonConfigurationKeys.HADOOP_SECURITY_AUTHORIZATION, false)) {
           server.refreshServiceAcl(confCopy, new HDFSPolicyProvider());
     }
-    this.server.setTracer(jn.tracer);
+    //this.server.setTracer(jn.tracer);
   }
 
   void start() {

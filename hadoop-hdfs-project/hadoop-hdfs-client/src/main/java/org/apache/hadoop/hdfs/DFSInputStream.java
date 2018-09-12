@@ -84,7 +84,6 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.IdentityHashStore;
 import org.apache.hadoop.util.StopWatch;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.htrace.core.SpanId;
 
 import com.google.common.annotations.VisibleForTesting;
 

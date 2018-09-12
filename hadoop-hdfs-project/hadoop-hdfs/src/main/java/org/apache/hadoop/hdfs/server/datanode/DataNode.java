@@ -213,7 +213,6 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Timer;
 import org.apache.hadoop.util.VersionInfo;
-import org.apache.htrace.core.Tracer;
 import org.eclipse.jetty.util.ajax.JSON;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -225,6 +224,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.protobuf.BlockingService;
 
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -402,9 +403,8 @@ public class DataNode extends ReconfigurableBase
   private final SocketFactory socketFactory;
 
   private static Tracer createTracer(Configuration conf) {
-    return new Tracer.Builder("DataNode").
-        conf(TraceUtils.wrapHadoopConf(DATANODE_HTRACE_PREFIX , conf)).
-        build();
+    // TODO
+    return GlobalTracer.get();
   }
 
   private long[] oobTimeouts; /** timeout value of each OOB type */
@@ -2138,7 +2138,6 @@ public class DataNode extends ReconfigurableBase
       // Notify the main thread.
       notifyAll();
     }
-    tracer.close();
   }
 
   /**
@@ -2639,7 +2638,6 @@ public class DataNode extends ReconfigurableBase
     if (localDataXceiverServer != null) {
       localDataXceiverServer.start();
     }
-    ipcServer.setTracer(tracer);
     ipcServer.start();
     startPlugins(getConf());
   }
@@ -3416,6 +3414,12 @@ public class DataNode extends ReconfigurableBase
   public void removeSpanReceiver(long id) throws IOException {
     checkSuperuserPrivilege();
     tracerConfigurationManager.removeSpanReceiver(id);
+  }
+
+  @Override
+  public void openTracingRegisterTracer() throws IOException {
+    checkSuperuserPrivilege();
+    tracerConfigurationManager.openTracingRegisterTracer();
   }
 
   public BlockRecoveryWorker getBlockRecoveryWorker(){

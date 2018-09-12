@@ -48,7 +48,8 @@ message DataTransferEncryptorMessageProto {
 message BaseHeaderProto {
   required ExtendedBlockProto block = 1;
   optional hadoop.common.TokenProto token = 2;
-  optional DataTransferTraceInfoProto traceInfo = 3;
+  optional DataTransferTraceInfoProto traceInfo = 3; // Remove?
+  optional bytes spanContext = 4;
 }
 
 message DataTransferTraceInfoProto {
@@ -204,7 +205,8 @@ message OpRequestShortCircuitAccessProto {
 
 message ReleaseShortCircuitAccessRequestProto {
   required ShortCircuitShmSlotProto slotId = 1;
-  optional DataTransferTraceInfoProto traceInfo = 2;
+  optional DataTransferTraceInfoProto traceInfo = 2; // Remove?
+  optional bytes spanContext = 3;
 }
 
 message ReleaseShortCircuitAccessResponseProto {
@@ -216,7 +218,8 @@ message ShortCircuitShmRequestProto {
   // The name of the client requesting the shared memory segment.  This is
   // purely for logging / debugging purposes.
   required string clientName = 1;
-  optional DataTransferTraceInfoProto traceInfo = 2;
+  optional DataTransferTraceInfoProto traceInfo = 2; // Remove?
+  optional bytes spanContext = 3;
 }
 
 message ShortCircuitShmResponseProto { 
