@@ -18,6 +18,7 @@
 
 package org.apache.ratis;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdds.scm.container.common.helpers.Pipeline;
 import org.apache.hadoop.hdds.protocol.DatanodeDetails;
 import org.apache.hadoop.ozone.OzoneConfigKeys;
@@ -28,9 +29,13 @@ import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.protocol.RaftPeerId;
+import org.apache.ratis.retry.RetryPolicies;
+import org.apache.ratis.retry.RetryPolicy;
 import org.apache.ratis.rpc.RpcType;
 import org.apache.ratis.shaded.com.google.protobuf.ByteString;
+import org.apache.ratis.shaded.proto.RaftProtos;
 import org.apache.ratis.util.SizeInBytes;
+import org.apache.ratis.util.TimeDuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +44,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -48,8 +55,19 @@ public interface RatisHelper {
   Logger LOG = LoggerFactory.getLogger(RatisHelper.class);
 
   static String toRaftPeerIdString(DatanodeDetails id) {
-    return id.getUuidString() + "_" +
-        id.getPort(DatanodeDetails.Port.Name.RATIS).getValue();
+    return id.getUuidString();
+  }
+
+  static UUID toDatanodeId(String peerIdString) {
+    return UUID.fromString(peerIdString);
+  }
+
+  static UUID toDatanodeId(RaftPeerId peerId) {
+    return toDatanodeId(peerId.toString());
+  }
+
+  static UUID toDatanodeId(RaftProtos.RaftPeerProto peerId) {
+    return toDatanodeId(RaftPeerId.valueOf(peerId.getId()));
   }
 
   static String toRaftPeerAddressString(DatanodeDetails id) {
@@ -103,25 +121,34 @@ public interface RatisHelper {
   }
 
   static RaftGroup newRaftGroup(Pipeline pipeline) {
-    return newRaftGroup(toRaftPeers(pipeline));
+    return new RaftGroup(pipeline.getId().getRaftGroupID(),
+        toRaftPeers(pipeline));
   }
 
-  static RaftClient newRaftClient(RpcType rpcType, Pipeline pipeline) {
+  static RaftClient newRaftClient(RpcType rpcType, Pipeline pipeline,
+      RetryPolicy retryPolicy) {
     return newRaftClient(rpcType, toRaftPeerId(pipeline.getLeader()),
-        newRaftGroup(pipeline.getId().getRaftGroupID(),
-            pipeline.getMachines()));
+        newRaftGroup(pipeline.getId().getRaftGroupID(), pipeline.getMachines()),
+        retryPolicy);
   }
 
-  static RaftClient newRaftClient(RpcType rpcType, RaftPeer leader) {
+  static RaftClient newRaftClient(RpcType rpcType, RaftPeer leader,
+      RetryPolicy retryPolicy) {
     return newRaftClient(rpcType, leader.getId(),
-        newRaftGroup(new ArrayList<>(Arrays.asList(leader))));
+        newRaftGroup(new ArrayList<>(Arrays.asList(leader))), retryPolicy);
   }
 
-  static RaftClient newRaftClient(
-      RpcType rpcType, RaftPeerId leader, RaftGroup group) {
+  static RaftClient newRaftClient(RpcType rpcType, RaftPeer leader,
+      RaftGroup group, RetryPolicy retryPolicy) {
+    return newRaftClient(rpcType, leader.getId(), group, retryPolicy);
+  }
+
+  static RaftClient newRaftClient(RpcType rpcType, RaftPeerId leader,
+      RaftGroup group, RetryPolicy retryPolicy) {
     LOG.trace("newRaftClient: {}, leader={}, group={}", rpcType, leader, group);
     final RaftProperties properties = new RaftProperties();
     RaftConfigKeys.Rpc.setType(properties, rpcType);
+
     GrpcConfigKeys.setMessageSizeMax(properties,
         SizeInBytes.valueOf(OzoneConfigKeys.DFS_CONTAINER_CHUNK_MAX_SIZE));
 
@@ -129,6 +156,22 @@ public interface RatisHelper {
         .setRaftGroup(group)
         .setLeaderId(leader)
         .setProperties(properties)
+        .setRetryPolicy(retryPolicy)
         .build();
+  }
+
+  static RetryPolicy createRetryPolicy(Configuration conf) {
+    int maxRetryCount =
+        conf.getInt(OzoneConfigKeys.OZONE_CLIENT_MAX_RETRIES, OzoneConfigKeys.
+            OZONE_CLIENT_MAX_RETRIES_DEFAULT);
+    long retryInterval = conf.getTimeDuration(OzoneConfigKeys.
+            OZONE_CLIENT_RETRY_INTERVAL, OzoneConfigKeys.
+            OZONE_CLIENT_RETRY_INTERVAL_DEFAULT,
+        TimeUnit.MILLISECONDS.MILLISECONDS);
+    TimeDuration sleepDuration =
+        TimeDuration.valueOf(retryInterval, TimeUnit.MILLISECONDS);
+    RetryPolicy retryPolicy = RetryPolicies
+        .retryUpToMaximumCountWithFixedSleep(maxRetryCount, sleepDuration);
+    return retryPolicy;
   }
 }

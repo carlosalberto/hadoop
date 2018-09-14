@@ -46,9 +46,6 @@ import org.apache.hadoop.hdds.scm.XceiverClientRatis;
 import org.apache.hadoop.hdds.scm.XceiverClientSpi;
 import org.apache.hadoop.hdds.scm.container.common.helpers.Pipeline;
 import org.apache.hadoop.test.GenericTestUtils;
-import org.apache.ratis.RatisHelper;
-import org.apache.ratis.client.RaftClient;
-import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.rpc.RpcType;
 import org.apache.ratis.util.CheckedBiConsumer;
 import org.junit.Assert;
@@ -138,16 +135,9 @@ public class TestContainerServer {
     conf.set(OzoneConfigKeys.DFS_CONTAINER_RATIS_DATANODE_STORAGE_DIR, dir);
 
     final ContainerDispatcher dispatcher = new TestContainerDispatcher();
-    return XceiverServerRatis.newXceiverServerRatis(dn, conf, dispatcher);
+    return XceiverServerRatis
+        .newXceiverServerRatis(dn, conf, dispatcher, null);
   }
-
-  static void initXceiverServerRatis(
-      RpcType rpc, DatanodeDetails dd, Pipeline pipeline) throws IOException {
-    final RaftPeer p = RatisHelper.toRaftPeer(dd);
-    final RaftClient client = RatisHelper.newRaftClient(rpc, p);
-    client.reinitialize(RatisHelper.newRaftGroup(pipeline), p.getId());
-  }
-
 
   static void runTestClientServerRatis(RpcType rpc, int numNodes)
       throws Exception {
@@ -155,7 +145,7 @@ public class TestContainerServer {
         (pipeline, conf) -> RatisTestHelper.initRatisConf(rpc, conf),
         XceiverClientRatis::newXceiverClientRatis,
         TestContainerServer::newXceiverServerRatis,
-        (dn, p) -> initXceiverServerRatis(rpc, dn, p));
+        (dn, p) -> RatisTestHelper.initXceiverServerRatis(rpc, dn, p));
   }
 
   static void runTestClientServer(
