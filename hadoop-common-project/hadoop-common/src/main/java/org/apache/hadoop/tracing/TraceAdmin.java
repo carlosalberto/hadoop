@@ -41,6 +41,13 @@ import org.apache.hadoop.util.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import brave.Tracing;
+import brave.opentracing.BraveTracer;
+import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.Reporter;
+import zipkin2.reporter.Sender;
+import zipkin2.reporter.okhttp3.OkHttpSender;
+
 /**
  * A command-line tool for viewing and modifying tracing settings.
  */
@@ -49,6 +56,9 @@ public class TraceAdmin extends Configured implements Tool {
   private TraceAdminProtocolPB proxy;
   private TraceAdminProtocolTranslatorPB remote;
   private static final Logger LOG = LoggerFactory.getLogger(TraceAdmin.class);
+
+  private static final String ZIPKIN_HOST = "http://localhost:9411";
+  private static final String LOCAL_SERVICE_NAME = "ProofOfConcept";
 
   private void usage() {
     PrintStream err = System.err;
@@ -151,16 +161,31 @@ public class TraceAdmin extends Configured implements Tool {
   }
 
   private int openTracingRegisterTracer(List<String> args) throws IOException {
-    Tracer tracer = TracerResolver.resolveTracer();
-    if (tracer == null) {
-      System.err.println("Could not able to resolve a Tracer through TraceResolver");
-    } else {
-      try {
-        GlobalTracer.register(tracer);
-        System.out.println("Successfully resolved a Tracer instance and registered it as the global Tracer");
-      } catch (IllegalStateException e) {
-        System.err.println("Could not register resolved Tracer through GlobalTracer: " + e);
-      }
+    //Tracer tracer = TracerResolver.resolveTracer();
+    //if (tracer == null) {
+    //  System.err.println("Could not able to resolve a Tracer through TraceResolver");
+    //}
+    String traceHost = ZIPKIN_HOST;
+    if (args.length > 0) {
+        traceHost = args[0];
+    }
+    System.out.println("Using trace host: " + traceHost);
+
+    Sender sender = OkHttpSender.create(traceHost + "/api/v2/spans");
+    Reporter reporter = AsyncReporter.create(sender);
+
+    Tracing braveTracing = Tracing.newBuilder()
+        .localServiceName(LOCAL_SERVICE_NAME)
+        .spanReporter(reporter)
+        .build();
+
+    Tracer tracer = BraveTracer.create(braveTracing);
+
+    try {
+      GlobalTracer.register(tracer);
+      System.out.println("Successfully resolved a Tracer instance and registered it as the global Tracer");
+    } catch (IllegalStateException e) {
+      System.err.println("Could not register resolved Tracer through GlobalTracer: " + e);
     }
 
     return 0;
