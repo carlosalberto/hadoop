@@ -168,10 +168,11 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
       <artifactId>netty-all</artifactId>
       <scope>compile</scope>
     </dependency>
+    <!--
     <dependency>
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-api</artifactId>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-util</artifactId>
