@@ -216,8 +216,7 @@ public class Sender implements DataTransferProtocol {
             setSlotId(PBHelperClient.convert(slotId));
     Span span = GlobalTracer.get().activeSpan();
     if (span != null) {
-      // TODO
-      //builder.setSpanContext(TraceUtils.spanContextToByteString(span.context()));
+      builder.setSpanContext(TraceUtils.spanContextToByteString(span.context()));
     }
     ReleaseShortCircuitAccessRequestProto proto = builder.build();
     send(out, Op.RELEASE_SHORT_CIRCUIT_FDS, proto);
@@ -230,8 +229,7 @@ public class Sender implements DataTransferProtocol {
             setClientName(clientName);
     Span span = GlobalTracer.get().activeSpan();
     if (span != null) {
-      // TODO
-      //builder.setSpanContext(TraceUtils.spanContextToByteString(span.context()));
+      builder.setSpanContext(TraceUtils.spanContextToByteString(span.context()));
     }
     ShortCircuitShmRequestProto proto = builder.build();
     send(out, Op.REQUEST_SHORT_CIRCUIT_SHM, proto);

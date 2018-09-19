@@ -86,7 +86,6 @@ import org.apache.hadoop.tracing.TraceUtils;
 import org.apache.hadoop.util.Time;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -218,7 +217,7 @@ public class NamenodeFsck implements DataEncryptionKeyFactory {
     this.staleInterval =
         conf.getLong(DFSConfigKeys.DFS_NAMENODE_STALE_DATANODE_INTERVAL_KEY,
           DFSConfigKeys.DFS_NAMENODE_STALE_DATANODE_INTERVAL_DEFAULT);
-    this.tracer = GlobalTracer.get();
+    this.tracer = TraceUtils.createAndRegisterTracer();
 
     for (Iterator<String> it = pmap.keySet().iterator(); it.hasNext();) {
       String key = it.next();

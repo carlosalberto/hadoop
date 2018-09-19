@@ -38,16 +38,10 @@ import org.apache.hadoop.tracing.TraceUtils;
 public final class FsTracer {
   private static Tracer instance;
 
-  /**
-   * DEPRECATED
-   */
   public static Tracer get(Configuration conf) {
-    return GlobalTracer.get();
+    return TraceUtils.createAndRegisterTracer();
   }
 
-  /**
-   * DEPRECATED
-   */
   @VisibleForTesting
   public static synchronized void clear() {
   }

@@ -229,11 +229,13 @@ public class FileContext {
   private final Configuration conf;
   private final UserGroupInformation ugi;
   final boolean resolveSymlinks;
+  private final Tracer tracer;
 
   private FileContext(final AbstractFileSystem defFs,
                       final Configuration aConf) {
     defaultFS = defFs;
     conf = aConf;
+    tracer = GlobalTracer.get(); // Tracer has already been registered.
     try {
       ugi = UserGroupInformation.getCurrentUser();
     } catch (IOException e) {
@@ -2842,10 +2844,7 @@ public class FileContext {
     return defaultFS.getAllStoragePolicies();
   }
 
-  /**
-   * DEPRECATED
-   */
   Tracer getTracer() {
-    return GlobalTracer.get();
+    return tracer;
   }
 }

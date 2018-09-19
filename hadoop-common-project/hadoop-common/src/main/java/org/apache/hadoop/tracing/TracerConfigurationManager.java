@@ -19,8 +19,6 @@ package org.apache.hadoop.tracing;
 
 import java.io.IOException;
 
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.tracing.SpanReceiverInfo.ConfigurationPair;
@@ -55,10 +53,6 @@ public class TracerConfigurationManager implements TraceAdminProtocol {
   }
 
   public synchronized void removeSpanReceiver(long spanReceiverId)
-      throws IOException {
-  }
-
-  public void openTracingRegisterTracer()
       throws IOException {
   }
 }

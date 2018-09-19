@@ -66,7 +66,4 @@ public interface TraceAdminProtocol {
    */
   @AtMostOnce
   public void removeSpanReceiver(long spanReceiverId) throws IOException;
-
-  @AtMostOnce
-  public void openTracingRegisterTracer() throws IOException;
 }

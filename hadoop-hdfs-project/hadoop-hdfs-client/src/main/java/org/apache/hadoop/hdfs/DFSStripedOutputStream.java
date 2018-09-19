@@ -1203,7 +1203,7 @@ public class DFSStripedOutputStream extends DFSOutputStream
       }
 
       try (Scope ignored =
-               GlobalTracer.get().buildSpan("completeFile").startActive(true)) {
+               dfsClient.getTracer().buildSpan("completeFile").startActive(true)) {
         completeFile(currentBlockGroup);
       }
       logCorruptBlocks();

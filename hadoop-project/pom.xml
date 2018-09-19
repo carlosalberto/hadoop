@@ -1220,18 +1220,13 @@
         <version>0.31.0</version>
       </dependency>
       <dependency>
-        <groupId>io.opentracing.contrib</groupId>
-        <artifactId>opentracing-tracerresolver</artifactId>
-        <version>0.1.5</version>
-      </dependency>
-      <dependency>
         <groupId>io.opentracing.brave</groupId>
         <artifactId>brave-opentracing</artifactId>
         <version>0.33.0</version>
       </dependency>
       <dependency>
         <groupId>io.zipkin.reporter2</groupId>
-        <artifactId>zipkin-sender-okhttp3</artifactId>
+        <artifactId>zipkin-sender-urlconnection</artifactId>
         <version>2.7.8</version>
       </dependency>
 

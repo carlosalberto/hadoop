@@ -264,16 +264,12 @@
       <artifactId>opentracing-util</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.opentracing.contrib</groupId>
-      <artifactId>opentracing-tracerresolver</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.opentracing.brave</groupId>
       <artifactId>brave-opentracing</artifactId>
     </dependency>
     <dependency>
       <groupId>io.zipkin.reporter2</groupId>
-      <artifactId>zipkin-sender-okhttp3</artifactId>
+      <artifactId>zipkin-sender-urlconnection</artifactId>
     </dependency>
 
     <dependency>

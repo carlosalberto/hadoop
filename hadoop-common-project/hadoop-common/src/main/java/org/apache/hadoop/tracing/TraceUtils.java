@@ -37,7 +37,17 @@ import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapExtractAdapter;
 import io.opentracing.propagation.TextMapInjectAdapter;
 import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import brave.Tracing;
+import brave.opentracing.BraveTracer;
+import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.Reporter;
+import zipkin2.reporter.Sender;
+import zipkin2.reporter.urlconnection.URLConnectionSender;
 
 /**
  * This class provides utility functions for tracing.
@@ -46,6 +56,8 @@ import io.opentracing.util.GlobalTracer;
 public class TraceUtils {
   private static List<ConfigurationPair> EMPTY = Collections.emptyList();
   static final String DEFAULT_HADOOP_TRACE_PREFIX = "hadoop.htrace.";
+
+  static final Logger LOG = LoggerFactory.getLogger(TraceUtils.class);
 
   public static HTraceConfiguration wrapHadoopConf(final String prefix,
         final Configuration conf) {
@@ -86,8 +98,33 @@ public class TraceUtils {
     };
   }
 
+  private static final String ZIPKIN_HOST = "http://localhost:9411";
+  private static final String LOCAL_SERVICE_NAME = "ProofOfConcept";
+
+  public static Tracer createAndRegisterTracer() {
+    Sender sender = URLConnectionSender.create(ZIPKIN_HOST + "/api/v2/spans");
+    Reporter reporter = AsyncReporter.create(sender);
+
+    Tracing braveTracing = Tracing.newBuilder()
+        .localServiceName(LOCAL_SERVICE_NAME)
+        .spanReporter(reporter)
+        .build();
+
+    Tracer tracer = BraveTracer.create(braveTracing);
+
+    try {
+      GlobalTracer.register(tracer);
+      LOG.debug("Successfully resolved a Tracer instance and registered it as the global Tracer");
+    } catch (IllegalStateException e) {
+      LOG.warn("Could not register resolved Tracer through GlobalTracer: {}", e);
+    }
+
+    return GlobalTracer.get();
+  }
+
   public static SpanContext byteStringToSpanContext(ByteString byteString) {
-    if (byteString == null) {
+    if (byteString == null || byteString.isEmpty()) {
+      LOG.debug("The provided serialized context was null or empty");
       return null;
     }
 
@@ -100,7 +137,7 @@ public class TraceUtils {
 
       context = GlobalTracer.get().extract(Format.Builtin.TEXT_MAP, new TextMapExtractAdapter(carrier));
     } catch (Exception e) {
-      // LOG?
+      LOG.warn("Could not deserialize context {}", e);
     }
 
     return context;
@@ -108,12 +145,14 @@ public class TraceUtils {
 
   public static ByteString spanContextToByteString(SpanContext context) {
     if (context == null) {
+      LOG.debug("No SpanContext was provided");
       return null;
     }
 
     Map<String, String> carrier = new HashMap<String, String>();
     GlobalTracer.get().inject(context, Format.Builtin.TEXT_MAP, new TextMapInjectAdapter(carrier));
     if (carrier.isEmpty()) {
+      LOG.warn("SpanContext was not properly injected by the Tracer.");
       return null;
     }
 
@@ -126,8 +165,9 @@ public class TraceUtils {
       objStream.flush();
 
       byteString = ByteString.copyFrom(stream.toByteArray());
+      LOG.debug("SpanContext serialized, resulting byte length is " + byteString.size());
     } catch (IOException e) {
-      // LOG?
+      LOG.warn("Could not serialize context {}", e);
     }
 
     return byteString;

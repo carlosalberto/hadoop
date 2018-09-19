@@ -18,7 +18,6 @@
 package org.apache.hadoop.hdfs.server.namenode;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -917,7 +916,7 @@ public class NameNode extends ReconfigurableBase implements
   protected NameNode(Configuration conf, NamenodeRole role)
       throws IOException {
     super(conf);
-    this.tracer = GlobalTracer.get();
+    this.tracer = TraceUtils.createAndRegisterTracer();
     this.tracerConfigurationManager =
         new TracerConfigurationManager(NAMENODE_HTRACE_PREFIX, conf);
     this.role = role;

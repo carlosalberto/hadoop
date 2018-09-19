@@ -529,14 +529,6 @@ public class NameNodeRpcServer implements NamenodeProtocols {
 
     clientRpcServer.addSuppressedLoggingExceptions(StandbyException.class,
         UnresolvedPathException.class);
-
-    //clientRpcServer.setTracer(nn.tracer);
-    if (serviceRpcServer != null) {
-      //serviceRpcServer.setTracer(nn.tracer);
-    }
-    if (lifelineRpcServer != null) {
-      //lifelineRpcServer.setTracer(nn.tracer);
-    }
   }
 
   /** Allow access to the lifeline RPC server for testing */
@@ -2388,13 +2380,6 @@ public class NameNodeRpcServer implements NamenodeProtocols {
     checkNNStartup();
     namesystem.checkSuperuserPrivilege();
     nn.tracerConfigurationManager.removeSpanReceiver(id);
-  }
-
-  @Override // TraceAdminProtocol
-  public void openTracingRegisterTracer() throws IOException {
-    // TODO
-    checkNNStartup();
-    namesystem.checkSuperuserPrivilege();
   }
 
   @Override // ClientProtocol

@@ -302,7 +302,7 @@ public class DFSClient implements java.io.Closeable, RemotePeerFactory,
   public DFSClient(URI nameNodeUri, ClientProtocol rpcNamenode,
       Configuration conf, FileSystem.Statistics stats) throws IOException {
     // Copy only the required DFSClient configuration
-    this.tracer = GlobalTracer.get();
+    this.tracer = GlobalTracer.get(); // Tracer has already been registered.
     this.dfsClientConf = new DfsClientConf(conf);
     this.conf = conf;
     this.stats = stats;

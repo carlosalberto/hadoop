@@ -225,7 +225,6 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.BlockingService;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -403,8 +402,7 @@ public class DataNode extends ReconfigurableBase
   private final SocketFactory socketFactory;
 
   private static Tracer createTracer(Configuration conf) {
-    // TODO
-    return GlobalTracer.get();
+      return TraceUtils.createAndRegisterTracer();
   }
 
   private long[] oobTimeouts; /** timeout value of each OOB type */
@@ -3414,12 +3412,6 @@ public class DataNode extends ReconfigurableBase
   public void removeSpanReceiver(long id) throws IOException {
     checkSuperuserPrivilege();
     tracerConfigurationManager.removeSpanReceiver(id);
-  }
-
-  @Override
-  public void openTracingRegisterTracer() throws IOException {
-    checkSuperuserPrivilege();
-    tracerConfigurationManager.openTracingRegisterTracer();
   }
 
   public BlockRecoveryWorker getBlockRecoveryWorker(){

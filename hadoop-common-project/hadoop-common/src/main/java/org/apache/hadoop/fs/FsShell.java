@@ -303,6 +303,7 @@ public class FsShell extends Configured implements Tool {
   public int run(String argv[]) throws Exception {
     // initialize FsShell
     init();
+    // Tracer has already been created and registered.
     Tracer tracer = GlobalTracer.get();
     int exitCode = -1;
     if (argv.length < 1) {

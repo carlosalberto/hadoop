@@ -79,7 +79,7 @@ public class JournalNode implements Tool, Configurable, JournalNodeMXBean {
   private ObjectName journalNodeInfoBeanName;
   private String httpServerURI;
   private final ArrayList<File> localDir = Lists.newArrayList();
-  Tracer tracer = GlobalTracer.get();
+  Tracer tracer = TraceUtils.createAndRegisterTracer();
 
   static {
     HdfsConfiguration.init();
